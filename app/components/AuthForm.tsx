@@ -6,7 +6,9 @@ import { Input } from '@/app/components/inputs/Input'
 import { Button } from '@/app/components/Button'
 import { AuthSocialButton } from '@/app/components/AuthSocialButton';
 import { BsGithub, BsGoogle } from 'react-icons/bs';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
+import toast from 'react-hot-toast';
+import { signIn } from 'next-auth/react';
 
 type Variant = 'LOGIN' | 'REGISTER';
 
@@ -37,19 +39,44 @@ export const AuthForm = () => {
     const onSubmit: SubmitHandler<FieldValues> = async ( data ) => {
         setIsLoading( true );
 
-        if ( variant === 'REGISTER' ) {
-            await axios.post( '/api/register', data );
+        try {
+            if ( variant === 'REGISTER' ) {
+                await axios.post( '/api/register', data );
+            } else if ( variant === 'LOGIN' ) {
+                await onSignIn( 'credentials' );
+            }
+        } catch ( error ) {
+            let errorMessage = 'Something went wrong!';
+            if ( error instanceof AxiosError ) {
+                errorMessage = error.response?.data?.error;
+            }
+            toast.error( errorMessage );
+        } finally {
             setIsLoading( false );
         }
-        if ( variant === 'LOGIN' ) {
-            // NextAuth login
+
+
+    }
+
+    const onSignIn = async ( provider: string ) => {
+        setIsLoading( true );
+        try {
+            const resp = await signIn( provider, { redirect: false } );
+            console.log( resp )
+            if ( resp?.error ) {
+                return toast.error( resp.error );
+            }
+
+            if ( resp?.ok ) {
+                toast.success( 'Logged in successfully!' );
+            }
+        } catch ( error ) {
+            console.log( error );
+        } finally {
+            setIsLoading( false );
         }
     }
 
-    const socialAction = ( action: string ) => {
-        setIsLoading( true );
-        // NextAuth social login
-    }
 
     return (
         <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
@@ -104,8 +131,8 @@ export const AuthForm = () => {
                     </div>
 
                     <div className="mt-6 flex gap-3">
-                        <AuthSocialButton icon={ BsGithub } onClick={ () => socialAction( 'github' ) }/>
-                        <AuthSocialButton icon={ BsGoogle } onClick={ () => socialAction( 'google' ) }/>
+                        <AuthSocialButton icon={ BsGithub } onClick={ () => onSignIn( 'github' ) }/>
+                        <AuthSocialButton icon={ BsGoogle } onClick={ () => onSignIn( 'google' ) }/>
                     </div>
                 </div>
 
