@@ -6,6 +6,7 @@ import { Input } from '@/app/components/inputs/Input'
 import { Button } from '@/app/components/Button'
 import { AuthSocialButton } from '@/app/components/AuthSocialButton';
 import { BsGithub, BsGoogle } from 'react-icons/bs';
+import axios from 'axios';
 
 type Variant = 'LOGIN' | 'REGISTER';
 
@@ -33,11 +34,12 @@ export const AuthForm = () => {
         }
     } );
 
-    const onSubmit: SubmitHandler<FieldValues> = ( data ) => {
+    const onSubmit: SubmitHandler<FieldValues> = async ( data ) => {
         setIsLoading( true );
 
         if ( variant === 'REGISTER' ) {
-            // Axios register
+            await axios.post( '/api/register', data );
+            setIsLoading( false );
         }
         if ( variant === 'LOGIN' ) {
             // NextAuth login
