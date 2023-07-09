@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { FieldValues, SubmitHandler, useForm } from 'react-hook-form';
 import { Input } from '@/app/components/inputs/Input'
 import { Button } from '@/app/components/Button'
@@ -8,11 +8,22 @@ import { AuthSocialButton } from '@/app/components/AuthSocialButton';
 import { BsGithub, BsGoogle } from 'react-icons/bs';
 import axios, { AxiosError } from 'axios';
 import toast from 'react-hot-toast';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 type Variant = 'LOGIN' | 'REGISTER';
 
 export const AuthForm = () => {
+    const session = useSession();
+    const router = useRouter();
+
+    useEffect( () => {
+        if ( session?.status === 'authenticated' ) {
+            router.push( '/users' );
+        }
+    }, [ session?.status, router ] );
+
+
     const [ variant, setVariant ] = useState<Variant>( 'LOGIN' );
     const [ isLoading, setIsLoading ] = useState<boolean>( false );
 
@@ -42,9 +53,9 @@ export const AuthForm = () => {
         try {
             if ( variant === 'REGISTER' ) {
                 await axios.post( '/api/register', data );
-            } else if ( variant === 'LOGIN' ) {
-                await onSignIn( 'credentials' );
             }
+            await onSignIn( 'credentials', data );
+            router.push( '/users' );
         } catch ( error ) {
             let errorMessage = 'Something went wrong!';
             if ( error instanceof AxiosError ) {
@@ -58,10 +69,10 @@ export const AuthForm = () => {
 
     }
 
-    const onSignIn = async ( provider: string ) => {
+    const onSignIn = async ( provider: string, data = {} ) => {
         setIsLoading( true );
         try {
-            const resp = await signIn( provider, { redirect: false } );
+            const resp = await signIn( provider, { ...data, redirect: false } );
             console.log( resp )
             if ( resp?.error ) {
                 return toast.error( resp.error );
