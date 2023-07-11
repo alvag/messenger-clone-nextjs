@@ -1,5 +1,6 @@
 import getSession from '@/app/actions/getSession';
 import { User } from '@prisma/client';
+import prisma from '@/app/libs/prismadb';
 
 const getUsers = async (): Promise<User[]> => {
     const session = await getSession();
