@@ -41,8 +41,9 @@ export const Form = () => {
         <div className="py-4 px-4 bg-white border-t flex items-center gap-2 lg:gap-4 w-full">
             <CldUploadButton options={ { maxFiles: 1 } }
                              uploadPreset="fglomrvz"
-                             onUpload={ handleUpload }/>
-            <HiPhoto size={ 30 } className="text-sky-500"/>
+                             onUpload={ handleUpload }>
+                <HiPhoto size={ 30 } className="text-sky-500"/>
+            </CldUploadButton>
 
             <form onSubmit={ handleSubmit( onSubmit ) }
                   className="flex items-center gap-2 lg:gap-4 w-full">

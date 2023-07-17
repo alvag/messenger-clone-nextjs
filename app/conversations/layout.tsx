@@ -1,6 +1,6 @@
-import { Sidebar } from '@/app/components';
 import { ConversationList } from '@/app/components/ConversationList';
 import getConversations from '@/app/actions/getConversations';
+import { Sidebar } from '@/app/components/Sidebar';
 
 interface Props {
     children: React.ReactNode;
