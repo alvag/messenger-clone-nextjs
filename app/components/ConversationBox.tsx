@@ -6,6 +6,7 @@ import { useCallback, useMemo } from 'react';
 import clsx from 'clsx';
 import Avatar from '@/app/components/Avatar';
 import { format } from 'date-fns';
+import { AvatarGroup } from '@/app/components/AvatarGroup';
 
 interface Props {
     data: FullConversationType;
@@ -65,7 +66,7 @@ export const ConversationBox = ( { data, selected }: Props ) => {
                 cursor-pointer`,
                  selected ? `bg-neutral-100` : `bg-white` ) }
         >
-            <Avatar user={ otherUser }/>
+            { data.isGroup ? <AvatarGroup users={ data.users }/> : <Avatar user={ otherUser }/> }
 
             <div className="min-w-0 flex-1">
                 <div className="focus:outline-none">

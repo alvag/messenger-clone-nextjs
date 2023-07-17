@@ -3,8 +3,9 @@ import { useSession } from 'next-auth/react';
 import clsx from 'clsx';
 import Avatar from '@/app/components/Avatar';
 import { format } from 'date-fns';
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
+import { ImageModal } from '@/app/components/ImageModal';
 
 interface Props {
     isLast: boolean;
@@ -13,6 +14,7 @@ interface Props {
 
 export const MessageBox = ( { message, isLast }: Props ) => {
     const session = useSession();
+    const [ imageModalOpen, setImageModalOpen ] = useState( false );
     const isOwn = message?.sender?.email === session.data?.user?.email;
     const seenList = ( message?.seen || [] )
         .filter( ( seen ) => seen.email !== message?.sender?.email )
@@ -53,9 +55,14 @@ export const MessageBox = ( { message, isLast }: Props ) => {
                     </div>
                 </div>
                 <div className={ messageContainer }>
+                    <ImageModal src={ message.image }
+                                isOpen={ imageModalOpen }
+                                onClose={ () => setImageModalOpen( false ) }/>
+
                     {
                         message?.image
-                            ? ( <Image src={ message.image }
+                            ? ( <Image onClick={ () => setImageModalOpen( true ) }
+                                       src={ message.image }
                                        height={ 288 }
                                        width={ 288 }
                                        className="object-cover cursor-pointer hover:scale-110 transition translate"
