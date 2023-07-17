@@ -1,7 +1,7 @@
 'use client';
 
 import { FullConversationType } from '@/app/types';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import useConversation from '@/app/hooks/useConversation';
 import clsx from 'clsx';
@@ -9,6 +9,9 @@ import { MdOutlineGroupAdd } from 'react-icons/md';
 import { ConversationBox } from '@/app/components/ConversationBox';
 import { GroupChatModal } from '@/app/components/GroupChatModal';
 import { User } from '@prisma/client';
+import { useSession } from 'next-auth/react';
+import { pusherClient } from '@/app/libs/pusher';
+import { find } from 'lodash';
 
 interface Props {
     initialItems: FullConversationType[];
@@ -16,6 +19,7 @@ interface Props {
 }
 
 export const ConversationList = ( { initialItems, users }: Props ) => {
+    const session = useSession();
     const [ items, setItems ] = useState( initialItems );
     const [ isModalOpen, setIsModalOpen ] = useState( false );
 
@@ -23,13 +27,63 @@ export const ConversationList = ( { initialItems, users }: Props ) => {
 
     const { conversationId, isOpen } = useConversation();
 
+    const pusherKey = useMemo( () => {
+        return session?.data?.user?.email;
+    }, [ session?.data?.user?.email ] );
+
+    useEffect( () => {
+        if ( !pusherKey ) return;
+
+        const newHandler = ( conversation: FullConversationType ) => {
+            setItems( current => {
+                if ( find( current, { id: conversation.id } ) ) {
+                    return current;
+                }
+
+                return [ conversation, ...current ];
+            } );
+        }
+
+        const updateHandler = ( conversation: FullConversationType ) => {
+            setItems( current => {
+                return current.map( currentConversation => {
+                    if ( currentConversation.id === conversation.id ) {
+                        return {
+                            ...currentConversation,
+                            messages: conversation.messages,
+                        };
+                    }
+
+                    return currentConversation;
+                } );
+            } );
+        }
+
+        const removeHandler = ( conversation: FullConversationType ) => {
+            setItems( current => {
+                return current.filter( currentConversation => {
+                    return currentConversation.id !== conversation.id;
+                } );
+            } );
+
+            if ( conversationId === conversation.id ) {
+                router.push( '/conversations' );
+            }
+        }
+
+        pusherClient.subscribe( pusherKey );
+        pusherClient.bind( 'conversation:new', newHandler );
+        pusherClient.bind( 'conversation:update', updateHandler );
+        pusherClient.bind( 'conversation:remove', removeHandler );
+    }, [ pusherKey ] )
+
     return (
         <>
             <GroupChatModal
                 users={ users }
                 isOpen={ isModalOpen }
                 onClose={ () => setIsModalOpen( false ) }/>
-            
+
             <aside className={ clsx( `
         fixed
         inset-y-0

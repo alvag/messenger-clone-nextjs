@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import getCurrentUser from '@/app/actions/getCurrentUser';
 import prisma from '@/app/libs/prismadb';
+import { pusherServer } from '@/app/libs/pusher';
 
 interface Props {
     params: {
@@ -30,7 +31,7 @@ export async function DELETE( req: Request, { params }: Props ) {
             return NextResponse.json( { error: 'Not Found' }, { status: 404 } );
         }
 
-        const deleteConversation = await prisma.conversation.deleteMany( {
+        const deletedConversation = await prisma.conversation.deleteMany( {
             where: {
                 id: conversationId,
                 userIds: {
@@ -39,7 +40,13 @@ export async function DELETE( req: Request, { params }: Props ) {
             }
         } );
 
-        return NextResponse.json( deleteConversation );
+        existingConversation.users.forEach( user => {
+            if ( user.email ) {
+                pusherServer.trigger( user.email, 'conversation:remove', existingConversation );
+            }
+        } );
+
+        return NextResponse.json( deletedConversation );
 
     } catch ( error ) {
         console.log( error );
